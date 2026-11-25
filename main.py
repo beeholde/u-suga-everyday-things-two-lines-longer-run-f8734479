@@ -1,47 +1,76 @@
-#!/usr/bin/env python3
-"""Everyday Things, Two Lines, Longer Run.
+"""Everyday Things, Two Lines — a battery as a packed lunch.
 
-Writes the two-line explanation to /output/entry.txt:
-line 1 explains a battery to a 10-year-old through one analogy,
-line 2 says why the analogy works: what it maps and what it leaves out.
-The second line also corrects the one wrong idea the lunch picture
-could plant (a toy eating), so the picture holds. Standard library
-only; deterministic.
+This program produces exactly two lines of plain text that explain one
+everyday object (a battery) to a ten-year-old. The first line paints the
+whole picture in a single vivid sentence; the second line says plainly
+which parts of the picture carry over and which part it leaves out, so
+the child is not left with the wrong idea.
+
+The text comes from two fixed sentences, is checked against the bounty
+gate (1-400 characters, exactly two non-empty lines), is written to the
+output file, and is then read back and compared character for character
+before the program reports success.
 """
 
 import os
 import sys
 
-LINE_1 = "A battery is a packed lunch your toy carries inside, full of power it uses up bit by bit."
-LINE_2 = (
-    "It maps power stored up beforehand that runs out until you swap in a fresh pack; "
-    "it leaves out the eating: a toy never chews, it just spends power until the lunch is gone."
-)
+# The two sentences of the entry. Their wording is fixed by the brief;
+# only the program around them may change.
+FIRST = "A battery is a packed lunch your toy carries inside, full of power it uses up bit by bit."
+SECOND = "It maps power stored up beforehand that runs out until you swap in a fresh pack; it leaves out the eating: a toy never chews, it just spends power until the lunch is gone."
 
-TEXT = LINE_1 + "\n" + LINE_2 + "\n"
+MIN_CHARS = 1
+MAX_CHARS = 400
 
 
-def main() -> int:
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    path = os.path.join(out_dir, "entry.txt")
-    os.makedirs(out_dir, exist_ok=True)
-    data = TEXT.encode("utf-8")
-    if not 1 <= len(TEXT) <= 400:
-        print("entry must be 1-400 characters, got %d" % len(TEXT), file=sys.stderr)
-        return 1
-    if TEXT.count("\n") != 2 or not LINE_1 or not LINE_2:
-        print("entry must be exactly two lines", file=sys.stderr)
-        return 1
-    with open(path, "wb") as f:
-        f.write(data)
-    with open(path, "rb") as f:
-        back = f.read()
-    if back != data:
-        print("read-back mismatch", file=sys.stderr)
-        return 1
-    print("wrote %s (%d bytes)" % (path, len(data)))
-    return 0
+def join_lines():
+    """Return the entry as a single string ending with a newline."""
+    return FIRST + "\n" + SECOND + "\n"
+
+
+def check_entry(text):
+    """Stop with a message if the text breaks any part of the gate."""
+    if not MIN_CHARS <= len(text) <= MAX_CHARS:
+        sys.exit(f"entry must be {MIN_CHARS}-{MAX_CHARS} chars, got {len(text)}")
+    rows = text.split("\n")
+    if rows and rows[-1] == "":
+        rows = rows[:-1]
+    if len(rows) != 2:
+        sys.exit(f"entry must be exactly 2 lines, got {len(rows)}")
+    if any(row.strip() == "" for row in rows):
+        sys.exit("entry lines must not be blank")
+    if "\r" in text:
+        sys.exit("entry must use plain newlines, no carriage returns")
+    if any(row != row.rstrip() for row in rows):
+        sys.exit("entry lines must not end with trailing spaces")
+
+
+def out_path():
+    """Pick the output file: the harness directory when set, else /output."""
+    base = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
+    return os.path.join(base, "entry.txt")
+
+
+def publish(text):
+    """Write the text, then read it back and confirm it matches."""
+    path = out_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+    with open(path, "r", encoding="utf-8") as handle:
+        stored = handle.read()
+    if stored != text:
+        sys.exit("read-back mismatch: stored text differs from entry")
+    return path
+
+
+def main():
+    text = join_lines()
+    check_entry(text)
+    path = publish(text)
+    print(f"wrote {len(text)} chars, 2 lines -> {path}")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
