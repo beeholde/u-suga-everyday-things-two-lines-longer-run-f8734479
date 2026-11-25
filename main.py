@@ -2,18 +2,20 @@
 """Everyday Things, Two Lines, Longer Run.
 
 Writes the two-line explanation to /output/entry.txt:
-line 1 explains a stapler to a 10-year-old through one analogy,
+line 1 explains a battery to a 10-year-old through one analogy,
 line 2 says why the analogy works: what it maps and what it leaves out.
-Standard library only; deterministic.
+The second line also corrects the one wrong idea the lunch picture
+could plant (a toy eating), so the picture holds. Standard library
+only; deterministic.
 """
 
 import os
 import sys
 
-LINE_1 = "A stapler is a little crocodile that bites your pages together and won't let go."
+LINE_1 = "A battery is a packed lunch your toy carries inside, full of power it uses up bit by bit."
 LINE_2 = (
-    "It maps the jaws that bite down and hold fast; it leaves out the teeth, "
-    "the danger, and that a real crocodile opens its mouth again while a staple never does."
+    "It maps power stored up beforehand that runs out until you swap in a fresh pack; "
+    "it leaves out the eating: a toy never chews, it just spends power until the lunch is gone."
 )
 
 TEXT = LINE_1 + "\n" + LINE_2 + "\n"
